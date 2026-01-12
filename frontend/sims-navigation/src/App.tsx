@@ -1,13 +1,15 @@
 import { useState } from 'react'
-
+import { HealthStatus } from "./components/HealthStatus"
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
-    
-      <p> this is the routing page </p>
+    <>
+      <p> this is the frontend </p>
+       <HealthStatus />
+    </>
   )
 }
 

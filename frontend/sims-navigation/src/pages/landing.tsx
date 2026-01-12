@@ -1,11 +1,10 @@
-import { HealthStatus } from "../components/HealthStatus"
+import Header from "../components/Header"
 
 export default function Landing() {
   return (
-    <div>
-      <h1>SIMS Indoor Navigation</h1>
-      <p>Scan QR to begin</p>
-      <HealthStatus />
-    </div>
+    <>
+      <Header />
+      {/* rest of the page */}
+    </>
   )
 }

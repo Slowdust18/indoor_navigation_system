@@ -1,2 +1,5 @@
+#logs 
 frontend folder placeholder
 branching done 
+app created 
+component and page dir created 

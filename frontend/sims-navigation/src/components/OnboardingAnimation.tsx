@@ -15,32 +15,22 @@ export default function OnboardingAnimation() {
       const textDuration = 0.5
       
       // --- INITIAL STATE ---
+      // Reset text content for loop
+      tl.call(() => {
+        const el = containerRef.current?.querySelector(".status-text")
+        if (el) el.textContent = "Scan QR Code"
+      }, undefined, 0)
+
       tl.set(".scene", { autoAlpha: 0, scale: 0.9 })
       tl.set(".scene-1", { autoAlpha: 1, scale: 1 })
-      tl.set(".status-text", { autoAlpha: 1 }) // Ensure text is visible at start
+      tl.set(".status-text", { autoAlpha: 1 })
       tl.set(".scanner-line", { scaleX: 0, opacity: 0 })
       tl.set(".scan-overlay", { opacity: 0 })
       tl.set(".list-item", { x: -20, opacity: 0 })
       tl.set(".path-line", { strokeDasharray: 300, strokeDashoffset: 300 })
       tl.set(".nav-dot", { opacity: 0 })
       tl.set(".destination-marker", { scale: 0, opacity: 0 })
-      tl.set(".status-text", { text: "Scan QR Code" }) // Fallback initialization
       
-      // Update text helper
-      const updateText = (text: string) => {
-        gsap.to(".status-text", {
-          y: -10,
-          opacity: 0,
-          duration: 0.2,
-          onComplete: () => {
-            const el = document.querySelector(".status-text")
-            if (el) el.textContent = text
-            gsap.set(".status-text", { y: 10 })
-            gsap.to(".status-text", { y: 0, opacity: 1, duration: 0.3 })
-          }
-        })
-      }
-
       // --- SCENE 1: QR SCAN ---
       // Animate scanner line
       tl.to(".scanner-line", { scaleX: 1, opacity: 1, duration: 0.4, ease: "power2.out" })
@@ -66,7 +56,12 @@ export default function OnboardingAnimation() {
         ease: "power2.in" 
       }, "+=0.5")
       
-      tl.call(() => updateText("Select Destination"))
+      tl.to(".status-text", { autoAlpha: 0, duration: 0.2 })
+      tl.call(() => {
+        const el = containerRef.current?.querySelector(".status-text")
+        if (el) el.textContent = "Select Destination"
+      })
+      tl.to(".status-text", { autoAlpha: 1, duration: 0.3 })
       
       tl.to(".scene-2", { 
         autoAlpha: 1, 
@@ -105,7 +100,12 @@ export default function OnboardingAnimation() {
         ease: "power2.in" 
       }, "+=0.5")
       
-      tl.call(() => updateText("Best Route"))
+      tl.to(".status-text", { autoAlpha: 0, duration: 0.2 })
+      tl.call(() => {
+        const el = containerRef.current?.querySelector(".status-text")
+        if (el) el.textContent = "Best Route"
+      })
+      tl.to(".status-text", { autoAlpha: 1, duration: 0.3 })
       
       tl.to(".scene-3", { 
         autoAlpha: 1, 
@@ -141,14 +141,14 @@ export default function OnboardingAnimation() {
       // Pulse at destination
       tl.to(".destination-marker", { 
         scale: 1.2, 
-        boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)",
+        boxShadow: "0 0 25px rgba(249, 115, 22, 0.6)",
         duration: 0.4,
         yoyo: true,
         repeat: 3 
       })
 
       // Fade out for loop
-      tl.to(".scene-3, .status-text", { autoAlpha: 0, duration: 0.5, delay: 1 })
+      tl.to(".scene-3", { autoAlpha: 0, duration: 0.5, delay: 1 })
       
     }, containerRef)
 
@@ -173,7 +173,7 @@ export default function OnboardingAnimation() {
           {/* === SCENE 1: QR SCAN === */}
           <div className="scene scene-1" style={styles.scene}>
             <div style={styles.qrContainer}>
-              <ScanLine className="qr-icon" size={80} color="#374151" />
+              <ScanLine className="qr-icon" size={80} color="#1e3a8a" />
               {/* Scanner Line */}
               <div className="scanner-line" style={styles.scannerLine}></div>
               {/* Scan Overlay flash */}
@@ -207,10 +207,10 @@ export default function OnboardingAnimation() {
              <div style={styles.mapContainer}>
                 {/* Simulated Walls */}
                 <svg width="100%" height="100%" viewBox="0 0 200 280" style={styles.mapSvg}>
-                   <rect x="20" y="20" width="60" height="80" rx="4" fill="#e5e7eb" />
-                   <rect x="120" y="20" width="60" height="60" rx="4" fill="#e5e7eb" />
-                   <rect x="20" y="140" width="60" height="100" rx="4" fill="#e5e7eb" />
-                   <rect x="120" y="120" width="60" height="120" rx="4" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" /> {/* Dest. room */}
+                   <rect x="20" y="20" width="60" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1.5" />
+                   <rect x="120" y="20" width="60" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1.5" />
+                   <rect x="20" y="140" width="60" height="100" rx="8" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1.5" />
+                   <rect x="120" y="120" width="60" height="120" rx="8" fill="#fff7ed" stroke="#f97316" strokeWidth="2" /> {/* Dest. room */}
                    
                    {/* The Path */}
                    <path 
@@ -231,13 +231,13 @@ export default function OnboardingAnimation() {
                 
                 {/* Destination Marker */}
                 <div className="destination-marker" style={styles.destMarker}>
-                   <MapPin size={24} color="#ef4444" fill="#ef4444" />
+                   <MapPin size={28} color="#f97316" fill="#f97316" />
                 </div>
                 
                 {/* Floating info card */}
                 <div style={styles.routeInfo}>
-                   <span style={{fontSize: 10, color: '#6b7280'}}>Distance</span>
-                   <span style={{fontSize: 14, fontWeight: 'bold', color: '#1f2937'}}>45m</span>
+                   <span style={{fontSize: 11, color: '#64748b', fontWeight: 500}}>Distance</span>
+                   <span style={{fontSize: 16, fontWeight: '800', color: '#f97316', fontFamily: 'sans-serif'}}>45m</span>
                 </div>
              </div>
           </div>
@@ -279,7 +279,7 @@ const styles: Record<string, React.CSSProperties> = {
   screen: {
     width: "100%",
     height: "100%",
-    background: "#f3f4f6", // Light gray background
+    background: "#ffffff",
     borderRadius: 30,
     position: "relative",
     overflow: "hidden",
@@ -293,12 +293,12 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     paddingBottom: 16,
     zIndex: 10,
-    background: "linear-gradient(to bottom, #ffffff 60%, transparent)",
+    background: "linear-gradient(to bottom, #ffffff 60%, rgba(255,255,255,0))",
   },
   statusText: {
     fontSize: 16,
-    fontWeight: 600,
-    color: "#1f2937",
+    fontWeight: 700,
+    color: "#3b82f6", // Blue text
     margin: 0,
     fontFamily: "sans-serif",
   },
@@ -325,16 +325,18 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 10px 25px -3px rgba(59, 130, 246, 0.15)", // Subtle blue shadow
+    border: "4px solid #eff6ff",
   },
   scannerLine: {
     position: "absolute",
     top: 10,
     left: 10,
     right: 10,
-    height: 2,
-    background: "#ef4444", // Red laser scanner color
-    boxShadow: "0 0 8px 1px rgba(239, 68, 68, 0.6)",
+    height: 3,
+    background: "#f97316", // Orange scanner
+    boxShadow: "0 0 12px 2px rgba(249, 115, 22, 0.6)",
+    borderRadius: 2,
   },
   scanOverlay: {
     position: "absolute",
@@ -342,8 +344,8 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     width: "100%",
     height: "100%",
-    background: "rgba(16, 185, 129, 0.3)", // Green success overlay
-    borderRadius: 20,
+    background: "rgba(59, 130, 246, 0.1)", // Light blue overlay
+    borderRadius: 16,
   },
   
   // Scene 2 Styles
@@ -354,44 +356,46 @@ const styles: Record<string, React.CSSProperties> = {
   },
   searchBar: {
       width: "100%",
-      height: 36,
-      background: "#e5e7eb",
-      borderRadius: 10,
+      height: 40,
+      background: "#eff6ff", // Light blue bg
+      borderRadius: 12,
       display: "flex",
       alignItems: "center",
       padding: "0 12px",
       gap: 8,
-      marginBottom: 10
+      marginBottom: 10,
+      border: "1px solid #dbeafe",
   },
   searchPlaceholder: {
       width: "60%",
       height: 6,
-      background: "#d1d5db",
+      background: "#93c5fd", // Blue-300
       borderRadius: 4
   },
   listItem: {
       width: "100%",
-      padding: "12px 16px",
+      padding: "14px 16px",
       background: "#ffffff",
-      borderRadius: 12,
+      borderRadius: 16,
       display: "flex",
       alignItems: "center",
       gap: 12,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-      border: "1px solid transparent",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.03)",
+      border: "1px solid #f3f4f6", // Very subtle border
       fontSize: 14,
-      fontWeight: 500,
-      color: "#374151"
+      fontWeight: 600,
+      color: "#1e3a8a", // Dark blue text
+      transition: "all 0.3s ease",
   },
   iconBox: {
-      width: 28,
-      height: 28,
-      background: "#f3f4f6",
-      borderRadius: 8,
+      width: 32,
+      height: 32,
+      background: "#fff7ed", // Light orange bg
+      borderRadius: 10,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      color: "#6b7280"
+      color: "#f97316" // Orange icon
   },
   
   // Scene 3 Styles
@@ -409,14 +413,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   navDot: {
       position: 'absolute',
-      width: 20,
-      height: 20,
-      background: '#3b82f6',
+      width: 22,
+      height: 22,
+      background: '#3b82f6', // Blue dot
       borderRadius: '50%',
-      border: '2px solid white',
-      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+      border: '3px solid white',
+      boxShadow: '0 4px 10px rgba(59, 130, 246, 0.4)',
       zIndex: 10,
-      // Centered alignment handled by GSAP motionPath alignOrigin
       top: 0, 
       left: 0,
       display: 'flex',
@@ -425,23 +428,23 @@ const styles: Record<string, React.CSSProperties> = {
   },
   destMarker: {
       position: 'absolute',
-      bottom: 85, // Approximate based on SVG rect
-      right: 48,  // Approximate based on SVG rect
+      bottom: 85, 
+      right: 48,
       transformOrigin: 'bottom center',
   },
   routeInfo: {
       position: 'absolute',
-      bottom: 20,
+      bottom: 24,
       left: '50%',
       transform: 'translateX(-50%)',
       background: 'white',
-      padding: '8px 16px',
-      borderRadius: 20,
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      padding: '10px 20px',
+      borderRadius: 24,
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px #eff6ff',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      width: 120
+      width: 140
   }
 }
 

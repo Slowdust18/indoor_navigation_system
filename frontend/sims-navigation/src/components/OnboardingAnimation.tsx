@@ -17,6 +17,7 @@ export default function OnboardingAnimation() {
       // --- INITIAL STATE ---
       tl.set(".scene", { autoAlpha: 0, scale: 0.9 })
       tl.set(".scene-1", { autoAlpha: 1, scale: 1 })
+      tl.set(".status-text", { autoAlpha: 1 }) // Ensure text is visible at start
       tl.set(".scanner-line", { scaleX: 0, opacity: 0 })
       tl.set(".scan-overlay", { opacity: 0 })
       tl.set(".list-item", { x: -20, opacity: 0 })
@@ -104,7 +105,7 @@ export default function OnboardingAnimation() {
         ease: "power2.in" 
       }, "+=0.5")
       
-      tl.call(() => updateText("Optimal Route Engine"))
+      tl.call(() => updateText("Best Route"))
       
       tl.to(".scene-3", { 
         autoAlpha: 1, 

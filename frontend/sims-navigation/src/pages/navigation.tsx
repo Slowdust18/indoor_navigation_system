@@ -1,9 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, MapPin, Navigation, ArrowRight, X } from "lucide-react";
 import floorData from "../data/floor_1.json";
 
-// Import your custom styling
 import "./navigation.css";
 
 type Room = {
@@ -13,18 +12,23 @@ type Room = {
 
 const NavigationPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // --- STATE ---
   const [origin, setOrigin] = useState<Room | null>(null);
   const [destination, setDestination] = useState<Room | null>(null);
-  const [activePicker, setActivePicker] = useState<"origin" | "destination" | null>(null);
+  const [activePicker, setActivePicker] =
+    useState<"origin" | "destination" | null>(null);
   const [search, setSearch] = useState("");
 
   // --- DATA ---
-  const rooms = useMemo(() => {
+  const rooms: Room[] = useMemo(() => {
     if (!floorData?.destinations) return [];
     return Object.entries(floorData.destinations)
-      .map(([id, data]) => ({ id, name: data.name || id }))
+      .map(([id, data]: any) => ({
+        id,
+        name: data.name || data.label || id,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
@@ -35,6 +39,24 @@ const NavigationPage = () => {
   }, [rooms, search]);
 
   const ready = Boolean(origin && destination);
+
+  // --- URL → STATE (ORIGIN + DESTINATION) ---
+  useEffect(() => {
+    if (!rooms.length) return;
+
+    const originFromUrl = searchParams.get("origin");
+    const destFromUrl = searchParams.get("dest");
+
+    if (originFromUrl) {
+      const originMatch = rooms.find((r) => r.id === originFromUrl);
+      if (originMatch) setOrigin(originMatch);
+    }
+
+    if (destFromUrl) {
+      const destMatch = rooms.find((r) => r.id === destFromUrl);
+      if (destMatch) setDestination(destMatch);
+    }
+  }, [searchParams, rooms]);
 
   // --- ACTIONS ---
   const openPicker = (type: "origin" | "destination") => {
@@ -60,33 +82,34 @@ const NavigationPage = () => {
 
   return (
     <div className="nav-page-container">
-      {/* Background Layer */}
+      {/* Background */}
       <div className="bg-image" />
       <div className="bg-overlay" />
 
       {/* Main Content */}
       <div className="content-wrapper">
-        
-        {/* Brand Header */}
+        {/* Header */}
         <div className="brand-header">
-          
           <h1 className="hero-title">SIMS Indoor Navigation</h1>
           <p className="hero-subtitle">Search and select locations</p>
           <div className="gold-underline" />
         </div>
 
-        {/* The Card */}
+        {/* Card */}
         <div className="glass-card">
-          
-          {/* Start Point */}
+          {/* Origin */}
           <div>
             <label className="input-label">Start Point</label>
-            <button 
-              className="fake-input-btn" 
+            <button
+              className="fake-input-btn"
               onClick={() => openPicker("origin")}
             >
               <Search className="input-icon" />
-              <span className={`input-text ${origin ? "filled" : "placeholder"}`}>
+              <span
+                className={`input-text ${
+                  origin ? "filled" : "placeholder"
+                }`}
+              >
                 {origin ? origin.name : "Search start location"}
               </span>
             </button>
@@ -101,21 +124,25 @@ const NavigationPage = () => {
           {/* Destination */}
           <div>
             <label className="input-label">Destination</label>
-            <button 
-              className="fake-input-btn" 
+            <button
+              className="fake-input-btn"
               onClick={() => openPicker("destination")}
             >
               <Search className="input-icon" />
-              <span className={`input-text ${destination ? "filled" : "placeholder"}`}>
+              <span
+                className={`input-text ${
+                  destination ? "filled" : "placeholder"
+                }`}
+              >
                 {destination ? destination.name : "Search destination"}
               </span>
             </button>
           </div>
 
-          {/* GO Button */}
-          <button 
-            className="go-btn" 
-            onClick={startNavigation} 
+          {/* GO BUTTON */}
+          <button
+            className="go-btn"
+            onClick={startNavigation}
             disabled={!ready}
           >
             {ready && <div className="shimmer" />}
@@ -124,25 +151,34 @@ const NavigationPage = () => {
               GO <ArrowRight size={16} strokeWidth={3} />
             </div>
           </button>
-
         </div>
       </div>
 
-      {/* Bottom Sheet Modal */}
+      {/* Bottom Sheet */}
       {activePicker && (
         <>
-          <div className="modal-overlay" onClick={() => setActivePicker(null)} />
-          
+          <div
+            className="modal-overlay"
+            onClick={() => setActivePicker(null)}
+          />
+
           <div className="modal-content">
-            <div className="modal-drag-area" onClick={() => setActivePicker(null)}>
+            <div
+              className="modal-drag-area"
+              onClick={() => setActivePicker(null)}
+            >
               <div className="modal-handle" />
             </div>
 
             <div className="modal-header">
               <h3 className="modal-title">
-                Select {activePicker === "origin" ? "Start Point" : "Destination"}
+                Select{" "}
+                {activePicker === "origin" ? "Start Point" : "Destination"}
               </h3>
-              <button onClick={() => setActivePicker(null)} style={{ border: 'none', background: 'transparent' }}>
+              <button
+                onClick={() => setActivePicker(null)}
+                style={{ border: "none", background: "transparent" }}
+              >
                 <X className="text-slate-400" />
               </button>
             </div>
@@ -163,13 +199,17 @@ const NavigationPage = () => {
             <div className="modal-list">
               {filteredRooms.length > 0 ? (
                 filteredRooms.map((room) => (
-                  <button 
-                    key={room.id} 
-                    className="room-item" 
+                  <button
+                    key={room.id}
+                    className="room-item"
                     onClick={() => selectRoom(room)}
                   >
                     <div className="room-icon-box">
-                      {activePicker === "origin" ? <Navigation size={20} /> : <MapPin size={20} />}
+                      {activePicker === "origin" ? (
+                        <Navigation size={20} />
+                      ) : (
+                        <MapPin size={20} />
+                      )}
                     </div>
                     <div className="room-info">
                       <h4>{room.name}</h4>
@@ -178,7 +218,13 @@ const NavigationPage = () => {
                   </button>
                 ))
               ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "#94a3b8",
+                  }}
+                >
                   No locations found
                 </div>
               )}

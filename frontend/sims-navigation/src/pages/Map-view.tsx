@@ -15,15 +15,17 @@ const MapView = () => {
 
   // 2. CALCULATE THE PATH
   // We connect: Origin Room -> Nearest Node -> [Graph Path] -> Nearest Node -> Dest Room
-  const pathPoints = useMemo(() => {
-    if (!originData || !destData) return '';
+  const { path: graphPathString, distance } = useMemo(() => {
+    if (!originData || !destData) return { path: '', distance: 0 };
 
     // A. Get the graph path
-    const graphPathString = findShortestPath(originData.nearest_node, destData.nearest_node);
+    const pathResult = findShortestPath(originData.nearest_node, destData.nearest_node);
     
     // B. Stitch the Room coordinates to the Graph path
     // "OriginX,OriginY" + " " + "GraphPoints..." + " " + "DestX,DestY"
-    return `${originData.x},${originData.y} ${graphPathString} ${destData.x},${destData.y}`;
+    const fullPath = `${originData.x},${originData.y} ${pathResult.path} ${destData.x},${destData.y}`;
+    
+    return { path: fullPath, distance: pathResult.distance };
   }, [originData, destData]);
 
   if (!originData || !destData) return <div>Invalid Route</div>;
@@ -42,9 +44,9 @@ const MapView = () => {
           <CampusMap>
             
             {/* 3. THE BLUE DOTTED ROUTE */}
-            {pathPoints && (
+            {graphPathString && (
               <polyline
-                points={pathPoints}
+                points={graphPathString}
                 fill="none"
                 stroke="#3B82F6"        // Blue color (Tailwind blue-500)
                 strokeWidth="5"         // Thick line
@@ -69,6 +71,13 @@ const MapView = () => {
 
           </CampusMap>
         </div>
+      </div>
+
+      {/* Footer with Total Distance */}
+      <div className="bg-white p-4 shadow z-10 text-center">
+        <p className="text-lg font-semibold text-gray-700">
+          Total Distance: {distance.toFixed(2)} meters
+        </p>
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
 // src/utils/pathfinding.ts
 import floorData from '../data/floor_1.json'; // Import your JSON directly
 
-// Types for TypeScript (Optional, ignore if using JS)
+
 interface Node { x: number; y: number; }
 interface Graph { [key: string]: { node: string; weight: number }[] }
 
-export const findShortestPath = (startNodeId: string, endNodeId: string) => {
+export const findShortestPath = (startNodeId: string, endNodeId: string): { path: string; distance: number } => {
   const nodes = floorData.nodes;
   const edges = floorData.edges;
 
@@ -63,18 +63,30 @@ export const findShortestPath = (startNodeId: string, endNodeId: string) => {
   const path: string[] = [];
   let u: string | null = endNodeId;
   
-  // If we never reached the end, return empty
-  if (distances[endNodeId] === Infinity) return [];
+  // If we never reached the end, return empty path and 0 distance
+  if (distances[endNodeId] === Infinity) return { path: '', distance: 0 };
 
   while (u) {
     path.unshift(u);
     u = previous[u];
   }
 
-  // 4. CONVERT IDS TO COORDINATES
-  // We return an array of {x, y} points for the SVG polyline
-  return path.map(id => {
+  // 4. CALCULATE TOTAL DISTANCE (1px = 1m)
+  let totalDistance = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = nodes[path[i] as keyof typeof nodes];
+    const next = nodes[path[i + 1] as keyof typeof nodes];
+    const dx = next.x - current.x;
+    const dy = next.y - current.y;
+    totalDistance += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // 5. CONVERT IDS TO COORDINATES
+  // Return an object with path string and distance
+  const pathString = path.map(id => {
     const n = nodes[id as keyof typeof nodes];
     return `${n.x},${n.y}`;
   }).join(' ');
+
+  return { path: pathString, distance: totalDistance };
 };

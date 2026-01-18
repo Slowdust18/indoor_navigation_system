@@ -1,70 +1,191 @@
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search, MapPin, Navigation, ArrowRight, X } from "lucide-react";
+import floorData from "../data/floor_1.json";
 
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom'; 
-import floorData from '../data/floor_1.json';  
+// Import your custom styling
+import "./navigation.css";
+
+type Room = {
+  id: string;
+  name: string;
+};
 
 const NavigationPage = () => {
-  const navigate = useNavigate(); 
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
+  const navigate = useNavigate();
 
-  const roomOptions = useMemo(() => {
+  // --- STATE ---
+  const [origin, setOrigin] = useState<Room | null>(null);
+  const [destination, setDestination] = useState<Room | null>(null);
+  const [activePicker, setActivePicker] = useState<"origin" | "destination" | null>(null);
+  const [search, setSearch] = useState("");
+
+  // --- DATA ---
+  const rooms = useMemo(() => {
+    if (!floorData?.destinations) return [];
     return Object.entries(floorData.destinations)
-      .map(([id, data]) => ({ id, name: data.name }))
+      .map(([id, data]) => ({ id, name: data.name || id }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
-  // --- THE HANDLER ---
-  const handleStartNavigation = () => {
-    if (!origin || !destination) {
-      alert("Please select both Start Point and Destination");
-      return;
-    }
-    
- 
-    navigate(`/map-view?origin=${origin}&dest=${destination}`);
+  const filteredRooms = useMemo(() => {
+    return rooms.filter((r) =>
+      r.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [rooms, search]);
+
+  const ready = Boolean(origin && destination);
+
+  // --- ACTIONS ---
+  const openPicker = (type: "origin" | "destination") => {
+    setSearch("");
+    setActivePicker(type);
   };
 
+  const selectRoom = (room: Room) => {
+    if (activePicker === "origin") setOrigin(room);
+    if (activePicker === "destination") setDestination(room);
+    setActivePicker(null);
+  };
+
+  const startNavigation = () => {
+    if (!origin || !destination) return;
+    navigate(`/map-view?origin=${origin.id}&dest=${destination.id}`);
+  };
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = activePicker ? "hidden" : "unset";
+  }, [activePicker]);
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border">
-        <h1 className="text-2xl font-bold mb-6 text-center">Plan Route</h1>
+    <div className="nav-page-container">
+      {/* Background Layer */}
+      <div className="bg-image" />
+      <div className="bg-overlay" />
 
-        {/* Origin Select */}
-        <div className="mb-4">
-          <label className="block text-sm font-bold text-gray-700 mb-2">Start Point</label>
-          <select 
-            value={origin} 
-            onChange={(e) => setOrigin(e.target.value)}
-            className="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select Origin...</option>
-            {roomOptions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
+      {/* Main Content */}
+      <div className="content-wrapper">
+        
+        {/* Brand Header */}
+        <div className="brand-header">
+          
+          <h1 className="hero-title">SIMS Indoor Navigation</h1>
+          <p className="hero-subtitle">Search and select locations</p>
+          <div className="gold-underline" />
         </div>
 
-        {/* Destination Select */}
-        <div className="mb-6">
-          <label className="block text-sm font-bold text-gray-700 mb-2">Destination</label>
-          <select 
-            value={destination} 
-            onChange={(e) => setDestination(e.target.value)}
-            className="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select Destination...</option>
-            {roomOptions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </div>
+        {/* The Card */}
+        <div className="glass-card">
+          
+          {/* Start Point */}
+          <div>
+            <label className="input-label">Start Point</label>
+            <button 
+              className="fake-input-btn" 
+              onClick={() => openPicker("origin")}
+            >
+              <Search className="input-icon" />
+              <span className={`input-text ${origin ? "filled" : "placeholder"}`}>
+                {origin ? origin.name : "Search start location"}
+              </span>
+            </button>
+          </div>
 
-        {/* Go Button */}
-        <button 
-          onClick={handleStartNavigation}
-          disabled={!origin || !destination}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-400"
-        >
-          Start Navigation
-        </button>
+          {/* Divider */}
+          <div className="connector-container">
+            <div className="connector-line" />
+            <div className="connector-badge">to</div>
+          </div>
+
+          {/* Destination */}
+          <div>
+            <label className="input-label">Destination</label>
+            <button 
+              className="fake-input-btn" 
+              onClick={() => openPicker("destination")}
+            >
+              <Search className="input-icon" />
+              <span className={`input-text ${destination ? "filled" : "placeholder"}`}>
+                {destination ? destination.name : "Search destination"}
+              </span>
+            </button>
+          </div>
+
+          {/* GO Button */}
+          <button 
+            className="go-btn" 
+            onClick={startNavigation} 
+            disabled={!ready}
+          >
+            {ready && <div className="shimmer" />}
+            <span>Start Navigation</span>
+            <div className="go-pill">
+              GO <ArrowRight size={16} strokeWidth={3} />
+            </div>
+          </button>
+
+        </div>
       </div>
+
+      {/* Bottom Sheet Modal */}
+      {activePicker && (
+        <>
+          <div className="modal-overlay" onClick={() => setActivePicker(null)} />
+          
+          <div className="modal-content">
+            <div className="modal-drag-area" onClick={() => setActivePicker(null)}>
+              <div className="modal-handle" />
+            </div>
+
+            <div className="modal-header">
+              <h3 className="modal-title">
+                Select {activePicker === "origin" ? "Start Point" : "Destination"}
+              </h3>
+              <button onClick={() => setActivePicker(null)} style={{ border: 'none', background: 'transparent' }}>
+                <X className="text-slate-400" />
+              </button>
+            </div>
+
+            <div className="modal-search-area">
+              <div className="search-box">
+                <Search size={20} />
+                <input
+                  autoFocus
+                  className="search-input-field"
+                  placeholder={`Search for ${activePicker}...`}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="modal-list">
+              {filteredRooms.length > 0 ? (
+                filteredRooms.map((room) => (
+                  <button 
+                    key={room.id} 
+                    className="room-item" 
+                    onClick={() => selectRoom(room)}
+                  >
+                    <div className="room-icon-box">
+                      {activePicker === "origin" ? <Navigation size={20} /> : <MapPin size={20} />}
+                    </div>
+                    <div className="room-info">
+                      <h4>{room.name}</h4>
+                      <p>Floor 1 • Main Block</p>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                  No locations found
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

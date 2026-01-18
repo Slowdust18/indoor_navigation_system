@@ -3,16 +3,18 @@ import React from 'react';
 
 interface CampusMapProps {
   children?: React.ReactNode;
-  className?: string; 
+  className?: string;
+  viewBox?: string;
 }
 
-const CampusMap: React.FC<CampusMapProps> = ({ children, className = '' }) => {
+const CampusMap: React.FC<CampusMapProps> = ({ children, className = '', viewBox = '0 0 1400 1000' }) => {
   return (
     <svg
-      viewBox="0 0 1400 1000"
+      viewBox={viewBox}
       xmlns="http://www.w3.org/2000/svg"
       className={`block max-w-full h-auto ${className}`}
       preserveAspectRatio="xMidYMid meet"
+      style={{ transition: 'all 0.3s ease' }}
     >
       {/* 1. DEFINITIONS & STYLES */}
       <defs>

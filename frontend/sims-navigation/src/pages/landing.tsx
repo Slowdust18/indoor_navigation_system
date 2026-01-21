@@ -3,19 +3,41 @@ import { useNavigate } from "react-router-dom"; // Import for navigation
 import Header from "../components/Header";
 import Guidance from "../components/OnboardingAnimation";
 import PWAInstallPrompt from "../components/PWAInstallPrompt";
+import QRScanner from "../components/QRScanner";
 
 export default function Landing() {
   const navigate = useNavigate(); // Initialize the hook
-  const [isQrOpen, setIsQrOpen] = useState(false); // State to handle QR visibility
+  const [isScannerOpen, setIsScannerOpen] = useState(false); // State to handle QR scanner visibility
+  const [scannedResult, setScannedResult] = useState<string | null>(null); // State to store scanned QR result
 
   // Function to handle page navigation
   const handleNavigate = () => {
     navigate("/navigation"); // Replace with your actual route path
   };
 
-  // Function to toggle QR display
-  const toggleQr = () => {
-    setIsQrOpen(!isQrOpen);
+  // Function to toggle QR scanner display
+  const toggleQrScanner = () => {
+    setIsScannerOpen(!isScannerOpen);
+    setScannedResult(null); // Reset result when opening/closing
+  };
+
+  // Function to handle successful QR scan
+  const handleQrScan = (result: string) => {
+    setScannedResult(result);
+    setIsScannerOpen(false); // Close scanner after successful scan
+
+    // Here you can add logic to handle the scanned result
+    // For example, parse the QR data and navigate to appropriate route
+    console.log('QR Code scanned:', result);
+
+    // If the QR contains navigation data, you could parse it here
+    // For now, we'll just display it
+  };
+
+  // Function to handle QR scan errors
+  const handleQrError = (error: string) => {
+    console.error('QR Scan error:', error);
+    // You could show an error message to the user here
   };
 
   return (
@@ -25,24 +47,35 @@ export default function Landing() {
 
       {/* Button Container */}
       <div style={styles.container}>
-        <button onClick={toggleQr} style={styles.button}>
-          {isQrOpen ? "Close QR" : "Open QR"}
+        <button onClick={toggleQrScanner} style={styles.button}>
+          {isScannerOpen ? "Close Scanner" : "Scan QR Code"}
         </button>
 
         <button onClick={handleNavigate} style={styles.button}>
-          Go to Page
+          Go to Navigation
         </button>
       </div>
 
-      {/* Conditional Rendering for QR Code */}
-      {isQrOpen && (
-        <div style={styles.qrContainer}>
-          <p>Scan the code below:</p>
-          {/* Replace the image source below with your actual QR code logic/image */}
-          <img 
-            src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Example" 
-            alt="QR Code" 
-          />
+      {/* QR Scanner */}
+      {isScannerOpen && (
+        <QRScanner
+          onScan={handleQrScan}
+          onError={handleQrError}
+          onClose={toggleQrScanner}
+        />
+      )}
+
+      {/* Scanned Result Display */}
+      {scannedResult && (
+        <div style={styles.resultContainer}>
+          <h3>QR Code Scanned!</h3>
+          <p><strong>Result:</strong> {scannedResult}</p>
+          <button
+            onClick={() => setScannedResult(null)}
+            style={{...styles.button, backgroundColor: '#6c757d'}}
+          >
+            Clear Result
+          </button>
         </div>
       )}
 
@@ -70,13 +103,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     borderRadius: "5px",
   },
-  qrContainer: {
+  resultContainer: {
     textAlign: "center",
     marginTop: "20px",
     padding: "20px",
-    border: "1px solid #ccc",
+    border: "1px solid #28a745",
     borderRadius: "10px",
-    width: "fit-content",
+    backgroundColor: "#f8fff9",
+    maxWidth: "400px",
     margin: "20px auto",
   }
 };

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom"; // Import for navigation
 import Header from "../components/Header";
 import Guidance from "../components/OnboardingAnimation";
+import PWAInstallPrompt from "../components/PWAInstallPrompt";
 
 export default function Landing() {
   const navigate = useNavigate(); // Initialize the hook
@@ -44,6 +45,9 @@ export default function Landing() {
           />
         </div>
       )}
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </>
   );
 }

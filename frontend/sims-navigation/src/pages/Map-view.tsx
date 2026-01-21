@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, type CSSProperties } from 'react';
+import { useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import CampusMap from '../components/map/floor1';
 import floorData from '../data/floor_1.json';
@@ -25,16 +25,16 @@ const calculatePath = (originData: Destination | null, destData: Destination | n
 // --- Styles Object (Inline CSS) ---
 // Color Palette
 const colors = {
-  primary: '#0f0902', // Blue
-  primaryDark: '#0c0c01',
-  secondary: '#10B981', // Green
-  accent: '#F59E0B', // Orange
-  background: '#F3F4F6',
+  primary: '#1E293B', // Slate 800 - Professional dark
+  primaryDark: '#0F172A',
+  secondary: '#10B981', // Emerald 500
+  accent: '#3B82F6', // Blue 500
+  background: '#F8FAFC', // Slate 50
   surface: '#FFFFFF',
-  text: '#111827',
-  textSecondary: '#6B7280',
+  text: '#1E293B',
+  textSecondary: '#64748B',
   lightBlue: '#F0F9FF',
-  lightGreen: '#F0FDFA',
+  lightGreen: '#ECFDF5',
   lightPurple: '#FAF5FF',
 };
 
@@ -76,36 +76,46 @@ const styles: Record<string, CSSProperties> = {
   mapSection: {
     flex: 1,
     width: '100%',
+    height: '100%',
     position: 'relative',
-    backgroundColor: colors.lightBlue,
+    backgroundColor: colors.background,
+    overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    // height: 'auto',
-    // flex: 'none',
-    // minHeight: 0,
   },
   mapWrapper: {
+    // Let the SVG determine the size, but constrained by viewport
     width: '100%',
     height: '100%',
-    padding: 0,
-    boxSizing: 'border-box',
+    maxWidth: '100%',
+    maxHeight: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: 'grab',
+    touchAction: 'none',
   },
+  mapWrapperActive: {
+    cursor: 'grabbing',
+  } as CSSProperties,
   bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: colors.surface,
     borderTopLeftRadius: '24px',
     borderTopRightRadius: '24px',
     padding: '24px 20px 32px 20px',
-    boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+    boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
     zIndex: 30,
-    flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
     borderTop: `4px solid ${colors.primary}`,
+    maxHeight: '40vh',
+    overflowY: 'auto',
   },
   infoRow: {
     display: 'flex',
@@ -219,7 +229,7 @@ const styles: Record<string, CSSProperties> = {
   },
   zoomControls: {
     position: 'absolute',
-    bottom: '20px',
+    bottom: '240px',
     right: '20px',
     display: 'flex',
     flexDirection: 'column',
@@ -261,37 +271,108 @@ const MapView = () => {
     [originData, destData]
   );
 
-  const [viewBox, setViewBox] = useState('0 0 1400 1000');
+  // --- INTERACTIVE MAP STATE ---
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 1400, h: 1000 });
+  const [isDragging, setIsDragging] = useState(false);
+  const lastPos = useRef({ x: 0, y: 0 });
 
+  // 1. Initial Fit Bounds
   useEffect(() => {
     if (!graphPathString) {
-      setViewBox('0 0 1400 1000');
+      setViewBox({ x: 0, y: 0, w: 1000, h: 1000 });
       return;
     }
     const points = graphPathString.split(' ').map(p => p.split(',').map(Number));
     const xs = points.map(p => p[0]);
     const ys = points.map(p => p[1]);
+    
+    // Bounds
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
-    const padding = 50;
-    const width = maxX - minX + 2 * padding;
-    const height = maxY - minY + 2 * padding;
-    setViewBox(`${minX - padding} ${minY - padding} ${width} ${height}`);
+    
+    // Context Padding
+    const padding = 80; 
+    
+    // Min Size (Zoom Cap)
+    const contentWidth = Math.max(maxX - minX, 300); 
+    const contentHeight = Math.max(maxY - minY, 300);
+
+    let viewX = minX + (maxX - minX)/2 - contentWidth/2 - padding;
+    let viewY = minY + (maxY - minY)/2 - contentHeight/2 - padding;
+    let viewW = contentWidth + 2 * padding;
+    let viewH = contentHeight + 2 * padding;
+
+    // --- Aspect Ratio Correction (Fill Screen) ---
+    // This ensures no "letterboxing" bars appear
+    const screenAspect = window.innerWidth / (window.innerHeight - 60); // Subtract approx header height
+    const contentAspect = viewW / viewH;
+
+    if (screenAspect > contentAspect) {
+      // Screen is wider than content -> increase width
+      const newW = viewH * screenAspect;
+      viewX -= (newW - viewW) / 2;
+      viewW = newW;
+    } else {
+      // Screen is taller than content -> increase height
+      const newH = viewW / screenAspect;
+      viewY -= (newH - viewH) / 2;
+      viewH = newH;
+    }
+
+    setViewBox({ x: viewX, y: viewY, w: viewW, h: viewH });
   }, [graphPathString]);
 
+
+  // 2. Pan Handlers
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    lastPos.current = { x: e.clientX, y: e.clientY };
+    (e.target as Element).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
+    lastPos.current = { x: e.clientX, y: e.clientY };
+    
+    // Sensitivity Factor (SVG units per Screen pixel)
+    // Approximate based on typical screen width
+    const scale = viewBox.w / (window.innerWidth || 1000); 
+
+    setViewBox(prev => ({
+        ...prev,
+        x: prev.x - dx * scale,
+        y: prev.y - dy * scale
+    }));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    (e.target as Element).releasePointerCapture(e.pointerId);
+  };
+
+
+  // 3. Zoom Handlers
   const handleZoom = (factor: number) => {
-    const [minX, minY, width, height] = viewBox.split(' ').map(Number);
-    const newWidth = width * factor;
-    const newHeight = height * factor;
-    const newX = minX + (width - newWidth) / 2;
-    const newY = minY + (height - newHeight) / 2;
-    setViewBox(`${newX} ${newY} ${newWidth} ${newHeight}`);
+    setViewBox(prev => {
+      const newW = prev.w * factor;
+      const newH = prev.h * factor;
+      return {
+        x: prev.x + (prev.w - newW) / 2, // Center zoom
+        y: prev.y + (prev.h - newH) / 2,
+        w: newW,
+        h: newH
+      };
+    });
   };
 
   const resetZoom = () => {
-     setViewBox('0 0 1400 1000');
+     // Re-trigger effect or just hard reset
+     setViewBox({ x: 0, y: 0, w: 1400, h: 1000 });
   };
 
   if (!originData || !destData) {
@@ -310,6 +391,21 @@ const MapView = () => {
       {/* <style> removed */}
       <Header />
       
+      {/* Dynamic Styles for Map Animation */}
+      <style>
+        {`
+          @keyframes dash-animation {
+            to {
+              stroke-dashoffset: -20;
+            }
+          }
+          .route-line {
+            stroke-dasharray: 10, 10;
+            animation: dash-animation 1s linear infinite;
+          }
+        `}
+      </style>
+      
       <div style={styles.mapSection}>
         {/* Floor Indicator Floating on Map */}
         <div style={styles.floorPill}>
@@ -323,40 +419,62 @@ const MapView = () => {
           <button style={{...styles.zoomBtn, fontSize: '14px'}} onClick={resetZoom} title="Reset View">⟲</button>
         </div>
 
-        <div style={styles.mapWrapper}>
-          <CampusMap viewBox={viewBox}>
-            {/* 1. The Route Line */}
+        <div 
+          style={styles.mapWrapper}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+        >
+          <CampusMap viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}>
+            {/* 1. The Route Line (With Halo and Animation) */}
             {graphPathString && (
-              <polyline
-                points={graphPathString}
-                fill="none"
-                stroke="#3B82F6"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ 
-                  filter: 'drop-shadow(0px 2px 4px rgba(59, 130, 246, 0.4))'
-                }}
-              />
+              <>
+                {/* Halo/Glow */}
+                <polyline
+                  points={graphPathString}
+                  fill="none"
+                  stroke="#3B82F6"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.3"
+                />
+                {/* Main Animated Line */}
+                <polyline
+                  points={graphPathString}
+                  fill="none"
+                  stroke="#2563EB"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="route-line"
+                  style={{ 
+                    filter: 'drop-shadow(0px 2px 4px rgba(37, 99, 235, 0.3))'
+                  }}
+                />
+              </>
             )}
 
-            {/* 2. Start Marker (Blue) */}
+            {/* 2. Start Marker (Pulse Blue) */}
             <g transform={`translate(${originData.x}, ${originData.y})`}>
-              {/* Pulse Effect Circle */}
-              <circle r="12" fill="rgba(59, 130, 246, 0.2)" />
-              <circle r="6" fill="#3B82F6" stroke="#FFFFFF" strokeWidth="2" />
-              <text y="-14" textAnchor="middle" fontWeight="700" fontSize="12" fill="#1E3A8A" style={{ textShadow: '0px 0px 4px #fff' }}>
-                Start
-              </text>
+              <circle r="16" fill="rgba(59, 130, 246, 0.2)">
+                <animate attributeName="r" values="16;24;16" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.2;0;0.2" dur="2s" repeatCount="indefinite" />
+              </circle>
+              <circle r="8" fill="#3B82F6" stroke="#FFFFFF" strokeWidth="3" />
             </g>
 
-            {/* 3. Destination Marker (Orange) */}
+            {/* 3. Destination Marker (Pin) */}
             <g transform={`translate(${destData.x}, ${destData.y})`}>
-              <path d="M0,-24 C-10,-24 -16,-16 -16,-6 C-16,8 0,24 0,24 C0,24 16,8 16,-6 C16,-16 10,-24 0,-24 Z" fill="#F59E0B" stroke="#FFFFFF" strokeWidth="2" />
-              <circle cy="-6" r="4" fill="#FFFFFF" />
-              <text y="-30" textAnchor="middle" fontWeight="800" fontSize="14" fill="#B45309" style={{ textShadow: '0px 0px 4px #fff' }}>
-                End
-              </text>
+              <path 
+                d="M0,-32 C-12,-32 -20,-22 -20,-10 C-20,8 0,32 0,32 C0,32 20,8 20,-10 C20,-22 12,-32 0,-32 Z" 
+                fill="#EF4444" 
+                stroke="#FFFFFF" 
+                strokeWidth="3" 
+                style={{ filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.2))' }}
+              />
+              <circle cy="-10" r="6" fill="#FFFFFF" />
             </g>
           </CampusMap>
         </div>
@@ -398,8 +516,14 @@ const BottomSheet = ({ originName, destName, distance, onCancel, onChangeRoute }
     {/* Header Row with Distance */}
     <div style={styles.infoRow}>
       <span style={{ fontSize: '18px', fontWeight: 800, color: '#111827' }}>Route Details</span>
-      <div style={styles.distanceBadge}>
-        <span>👟</span> {Math.round(distance)} meters
+      
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={styles.distanceBadge}>
+          <span>⏱️</span> {Math.ceil(distance / 80)} min
+        </div>
+        <div style={{...styles.distanceBadge, background: '#3B82F6', boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)' }}>
+          <span>👟</span> {Math.round(distance)}m
+        </div>
       </div>
     </div>
 

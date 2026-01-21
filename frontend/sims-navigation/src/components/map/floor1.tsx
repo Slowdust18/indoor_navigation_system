@@ -12,43 +12,47 @@ const CampusMap: React.FC<CampusMapProps> = ({ children, className = '', viewBox
     <svg
       viewBox={viewBox}
       xmlns="http://www.w3.org/2000/svg"
-      className={`block max-w-full h-auto ${className}`}
+      className={`block w-full h-full ${className}`}
       preserveAspectRatio="xMidYMid meet"
-      style={{ transition: 'all 0.3s ease' }}
+      style={{ transition: 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)', background: '#F8FAFC' }}
     >
       {/* 1. DEFINITIONS & STYLES */}
       <defs>
+        <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E2E8F0" strokeWidth="1"/>
+        </pattern>
         <style>
           {`
-            /* --- NAVIGATION SURFACES --- */
-            .walkable { fill: #E0E0E0; stroke: #BDBDBD; stroke-width: 1; }
-            .atrium-floor { fill: #EEEEEE; stroke: #BDBDBD; stroke-width: 1; }
+            /* --- BASE LAYERS --- */
+            .bg-grid { fill: url(#grid-pattern); }
             
-            /* --- ZONES --- */
-            .zone-academic { fill: #FFF9C4; stroke: #FBC02D; stroke-width: 2; } /* Light Yellow */
-            .zone-admin    { fill: #B2DFDB; stroke: #00897B; stroke-width: 2; } /* Light Teal */
-            .zone-labs     { fill: #D1C4E9; stroke: #5E35B1; stroke-width: 2; } /* Light Purple */
-            .zone-service  { fill: #CFD8DC; stroke: #607D8B; stroke-width: 2; } /* Grey */
+            /* --- NAVIGATION SURFACES --- */
+            .walkable { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1; }
+            .atrium-floor { fill: #F1F5F9; stroke: #CBD5E1; stroke-width: 1; }
+            
+            /* --- ZONES (Modern Clean) --- */
+            .zone-academic { fill: #E0F2FE; stroke: #7DD3FC; stroke-width: 2; } /* Sky Blue */
+            .zone-admin    { fill: #F0FDF4; stroke: #86EFAC; stroke-width: 2; } /* Green */
+            .zone-labs     { fill: #F5F3FF; stroke: #A78BFA; stroke-width: 2; } /* Violet */
+            .zone-service  { fill: #F1F5F9; stroke: #94A3B8; stroke-width: 2; } /* Slate */
             
             /* --- VERTICAL & OBSTACLES --- */
-            .core { fill: #90A4AE; stroke: #455A64; stroke-width: 2; }
-            .pillar { fill: #263238; }
-            
-            /* --- GRAPH NODES (DENSE) --- */
-            .node-hub { fill: #D50000; opacity: 0.8; } /* Major junctions */
-            .node-path { fill: #212121; opacity: 0.5; } /* Path steps */
-            .edge { stroke: #212121; stroke-width: 0.5; stroke-dasharray: 2,2; opacity: 0.2; }
+            .core { fill: #475569; stroke: #334155; stroke-width: 0; }
+            .pillar { fill: #1E293B; }
             
             /* --- TEXT --- */
-            .label-room { font-family: sans-serif; font-size: 13px; font-weight: 700; fill: #37474F; text-anchor: middle; dominant-baseline: middle; }
-            .label-area { font-family: sans-serif; font-size: 18px; font-weight: 900; fill: #BDBDBD; text-anchor: middle; opacity: 0.5; }
-            .door-gap { stroke: #E0E0E0; stroke-width: 8; }
+            .label-room { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; fill: #475569; text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+            .label-zone { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; fill: #94A3B8; text-anchor: middle; text-transform: uppercase; letter-spacing: 1px; }
+            
+            /* --- DOORS --- */
+            .door-gap { stroke: #FFFFFF; stroke-width: 8; stroke-linecap: round; }
           `}
         </style>
       </defs>
 
-      {/* 2. BACKGROUND */}
-      <rect width="1400" height="1000" fill="#FAFAFA" />
+      {/* 2. BACKGROUND & GRID */}
+      <rect width="1400" height="1000" fill="#F8FAFC" />
+      <rect width="1400" height="1000" className="bg-grid" />
 
       {/* 3. NAVIGATION MESH (Walkable Areas) */}
       <g id="nav-mesh">

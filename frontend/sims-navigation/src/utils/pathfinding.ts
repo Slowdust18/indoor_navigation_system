@@ -2,7 +2,6 @@
 import floorData from '../data/floor_1.json'; // Import your JSON directly
 
 
-interface Node { x: number; y: number; }
 interface Graph { [key: string]: { node: string; weight: number }[] }
 
 export const findShortestPath = (startNodeId: string, endNodeId: string): { path: string; distance: number } => {

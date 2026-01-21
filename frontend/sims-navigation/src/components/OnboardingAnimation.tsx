@@ -12,8 +12,6 @@ export default function OnboardingAnimation() {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 })
       
-      const textDuration = 0.5
-      
       // --- INITIAL STATE ---
       // Reset text content for loop
       tl.call(() => {

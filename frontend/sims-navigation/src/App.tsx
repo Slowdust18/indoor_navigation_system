@@ -3,6 +3,7 @@ import Landing from "./pages/landing"
 import Navigation from "./pages/navigation"
 import MapView from "./pages/Map-view"
 import QRGenerator from "./pages/qrAdmin"
+import Test from "./pages/test"
 
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <Route path="/navigation" element={<Navigation />} />
       <Route path="/map-view" element={<MapView />} />
       <Route path="/admin" element={<QRGenerator />} />
+      <Route path="/test" element={<Test />} />
 
      
     </Routes>
